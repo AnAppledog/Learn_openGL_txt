@@ -10,7 +10,7 @@ uniform sampler2D myTexture1;
 
 void main() {
     // 带贴图数据
-    FragColor = mix(texture(myTexture0, myTexCoord), texture(myTexture1, myTexCoord), 0.8) * myColor;   // 使用不同的纹理单元（数据与设置不同） 相同的纹理坐标
+    FragColor = mix(texture(myTexture0, myTexCoord), texture(myTexture1, myTexCoord), 1.0) * myColor;   // 使用不同的纹理单元（数据与设置不同） 相同的纹理坐标
     // 不带贴图数据
     // FragColor = myColor; 
 }

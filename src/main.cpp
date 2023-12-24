@@ -120,6 +120,10 @@ int main() {
 
     // 创建一个着色器程序对象  利用已经编写好的着色器代码
     Shader myshader("shaderSource/vs.txt", "shaderSource/fs.txt");
+    myshader.use();                         // 启用着色器程序对象
+
+    myshader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
+    myshader.setInt("myTexture1", 1);
 
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
@@ -128,7 +132,6 @@ int main() {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);   // 设置清屏颜色状态
         glClear(GL_COLOR_BUFFER_BIT);           // 用设置好的颜色状态进行清屏操作
 
-        myshader.use();                         // 使用着色器程序对象
         float timeValue = glfwGetTime();
         float timeX = sin(timeValue) * 0.5;
         float timeY = cos(timeValue) * 0.5;
@@ -136,8 +139,6 @@ int main() {
         myshader.setFloat("offset_x", timeX);   // 设置x轴偏移量
         myshader.setFloat("offset_y", timeY);   // 设置y轴偏移量
         myshader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
-        myshader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
-        myshader.setInt("myTexture1", 1);
 
         glActiveTexture(GL_TEXTURE0);           // 对于不同的纹理单元使用相对应的纹理对象ID
         glBindTexture(GL_TEXTURE_2D, texture[0]);   
@@ -151,6 +152,9 @@ int main() {
         glfwPollEvents();                       // 交换颜色缓冲区 输出显示
     }
 
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
     
     glfwTerminate();        // 关闭GLFW
     return 0;
