@@ -6,7 +6,7 @@ GLFWwindow* glfw_init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);        
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 选择为内核版本        
 
-    GLFWwindow* mywindow = glfwCreateWindow(WIDTH, HEIGHT, "1.4.1", NULL, NULL);
+    GLFWwindow* mywindow = glfwCreateWindow(WIDTH, HEIGHT, "Learn_openGl", NULL, NULL);
     if (mywindow == NULL) {
         glfwTerminate();
         return NULL;

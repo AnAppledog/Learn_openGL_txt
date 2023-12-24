@@ -1,5 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <math.h>
 
@@ -7,11 +10,14 @@
 #include "gl_init.h"
 #include "shader.h"
 #include "stb_image.h"
+
 // 调整窗口大小
 //void frambuffer_size_callback(GLFWwindow* window, int width, int height) {
 //    glViewport(0, 0, width, height);
 //    return;
 //}
+
+float mixValue = 0.5f;      // 两个贴图的混合参数 初始化为0.5
 
 float vertices[] {          // 用flaot数组定义顶点的标准化设备坐标 每一行分别对应一个顶点的x、y、z轴坐标
     //位置                  颜色        每个顶点都有相对应的独特的颜色      纹理坐标
@@ -94,8 +100,6 @@ int main() {
     }
     stbi_image_free(data);      // 释放存放图片数据的变量
 
-
-
     glActiveTexture(GL_TEXTURE1);                   // 激活纹理单元1
     glBindTexture(GL_TEXTURE_2D, texture[1]);       // 将第2个ID与2D纹理对象绑定 并存放在纹理单元1内
 
@@ -107,9 +111,9 @@ int main() {
 
     // 传入贴图数据
     int widths1, heights1, nrChannels1;
-    unsigned char* data1 = stbi_load("textures/sister.jpeg", &widths1, &heights1, &nrChannels1, 0);
+    unsigned char* data1 = stbi_load("textures/expression.png", &widths1, &heights1, &nrChannels1, 0);
     if (data1) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widths1, heights1, 0, GL_RGB, GL_UNSIGNED_BYTE, data1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, widths1, heights1, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
@@ -139,6 +143,7 @@ int main() {
         myshader.setFloat("offset_x", timeX);   // 设置x轴偏移量
         myshader.setFloat("offset_y", timeY);   // 设置y轴偏移量
         myshader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
+        myshader.setFloat("mixV", mixValue);    // 设置贴图混合参数
 
         glActiveTexture(GL_TEXTURE0);           // 对于不同的纹理单元使用相对应的纹理对象ID
         glBindTexture(GL_TEXTURE_2D, texture[0]);   
@@ -155,7 +160,7 @@ int main() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    
+
     glfwTerminate();        // 关闭GLFW
     return 0;
 }
@@ -164,6 +169,16 @@ int main() {
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        mixValue += 0.003f;
+        if (mixValue > 1.0f)
+            mixValue = 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        mixValue -= 0.003f;
+        if (mixValue < 0.0f)
+            mixValue = 0.0f;
     }
     return;
 }
