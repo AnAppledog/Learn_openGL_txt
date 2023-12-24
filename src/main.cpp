@@ -129,29 +129,39 @@ int main() {
     myshader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
     myshader.setInt("myTexture1", 1);
 
+    glm::mat4 tran;     //定义一个变换矩阵
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
         processInput(mywindow);                 //处理键盘输入
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);   // 设置清屏颜色状态
+        glClearColor(1.0f, 0.75f, 0.79f, 1.0f);   // 设置清屏颜色状态
         glClear(GL_COLOR_BUFFER_BIT);           // 用设置好的颜色状态进行清屏操作
 
         float timeValue = glfwGetTime();
-        float timeX = sin(timeValue) * 0.5;
-        float timeY = cos(timeValue) * 0.5;
         float timeC = (cos(timeValue) * 0.5) + 0.5f;
-        myshader.setFloat("offset_x", timeX);   // 设置x轴偏移量
-        myshader.setFloat("offset_y", timeY);   // 设置y轴偏移量
         myshader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
         myshader.setFloat("mixV", mixValue);    // 设置贴图混合参数
 
-        glActiveTexture(GL_TEXTURE0);           // 对于不同的纹理单元使用相对应的纹理对象ID
-        glBindTexture(GL_TEXTURE_2D, texture[0]);   
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        // 创建一个变换矩阵 实现渲染图形坐标位置的变化
+        tran = glm::mat4(1.0f);     // 每一次循环先将其初始化为一个单位矩阵
+        tran = glm::translate(tran, glm::vec3(sin(timeValue) * 0.5, cos(timeValue) * 0.5, 0.0));
+        tran = glm::scale(tran, glm::vec3(0.8, 0.8, 0.8));
+        tran = glm::rotate(tran, timeValue * 1.4f, glm::vec3(0, 0, 1));     // 绕z轴旋转 度数随时间变化而变化
+        myshader.set4fv("trans", tran);
         
         glBindVertexArray(VAO);                 // 使用VAO存储的顶点属性信息
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);   // 从索引的第0个开始 每三个顶点画一个三角形
+
+        tran = glm::mat4(1.0f);
+        tran = glm::translate(tran, glm::vec3(cos(timeValue) * 0.5, 0.0, 0.0));
+        myshader.set4fv("trans", tran);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        tran = glm::mat4(1.0f);                 
+        float timeS = sin(timeValue) + 1.0f;    // 缩放倍率
+        tran = glm::scale(tran, glm::vec3(timeS, timeS, timeS));
+        myshader.set4fv("trans", tran);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(mywindow);              // 判断是否有事件触发（鼠标 键盘等）并负责更新窗口状态 调用相应的回调函数
         glfwPollEvents();                       // 交换颜色缓冲区 输出显示

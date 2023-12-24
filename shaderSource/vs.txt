@@ -7,13 +7,11 @@ layout (location = 2) in vec2 aTexCoord;
 out vec4 myColor;
 out vec2 myTexCoord;
 
-uniform float offset_x;
-uniform float offset_y;
 uniform float offset_c;
+uniform mat4 trans;         // 变换矩阵
 
 void main() {
-    gl_Position = vec4(aPos.x + offset_x, aPos.y + offset_y, aPos.z, 1.0);
-    // gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = trans * vec4(aPos.x, aPos.y, aPos.z, 1.0);
     myColor = vec4(Color.x * (1 - 2 * offset_c) + offset_c, Color.y * (1 - 2 * offset_c) + offset_c, Color.z * (1 - 2 * offset_c) + offset_c, Color.w);
     myTexCoord = aTexCoord;
 }
