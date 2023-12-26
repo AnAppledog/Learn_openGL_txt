@@ -8,10 +8,13 @@ out vec4 myColor;
 out vec2 myTexCoord;
 
 uniform float offset_c;
-uniform mat4 trans;         // 变换矩阵
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main() {
-    gl_Position = trans * vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    myColor = vec4(Color.x * (1 - 2 * offset_c) + offset_c, Color.y * (1 - 2 * offset_c) + offset_c, Color.z * (1 - 2 * offset_c) + offset_c, Color.w);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    // myColor = vec4(Color.x * (1 - 2 * offset_c) + offset_c, Color.y * (1 - 2 * offset_c) + offset_c, Color.z * (1 - 2 * offset_c) + offset_c, Color.w);
+    myColor = Color;
     myTexCoord = aTexCoord;
 }

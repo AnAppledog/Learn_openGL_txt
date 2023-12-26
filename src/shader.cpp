@@ -95,7 +95,7 @@ void Shader::setFloat(const std::string &name, float value) const
 { 
     glUniform1f(glGetUniformLocation(this->ID, name.c_str()), value); 
 } 
-void Shader::set4fv(const std::string &name, glm::mat4 value) const
+void Shader::setMat4(const std::string &name, glm::mat4 value) const
 {   
     // 第一个参数为uniform变量的位置信息    第二个参数为传递矩阵的数量  第三个参数为矩阵是否转置    第四个参数为矩阵 value_ptr将glm矩阵变换为glfw矩阵
     glUniformMatrix4fv(glGetUniformLocation(this->ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(value)); 

@@ -24,7 +24,7 @@ public:
     void setBool(const std::string &name, bool value) const;  
     void setInt(const std::string &name, int value) const;   
     void setFloat(const std::string &name, float value) const;
-    void set4fv(const std::string &name, glm::mat4 value) const;    // 传递一个4维float矩阵向量 一般为变换矩阵
+    void setMat4(const std::string &name, glm::mat4 value) const;    // 传递一个4维float矩阵向量 一般为变换矩阵
 private:
     // 程序ID
     unsigned int ID;
