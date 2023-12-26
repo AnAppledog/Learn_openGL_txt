@@ -10,14 +10,21 @@
 #include "gl_init.h"
 #include "shader.h"
 #include "stb_image.h"
-
-// 调整窗口大小
-//void frambuffer_size_callback(GLFWwindow* window, int width, int height) {
-//    glViewport(0, 0, width, height);
-//    return;
-//}
+#include "camera.h"
 
 float mixValue = 0.5f;      // 两个贴图的混合参数 初始化为0.5
+float deltaTime = 0.0f;     // 用来计算每一帧之间的间隔时间
+float lastTime = 0.0f;
+float fov = 45.0f;          // 视角范围 初始化为最大45°
+float pitch = 0.0f;         // 俯角
+float yaw = -90.0f;         // 偏航角
+float lastX = 400, lastY = 300; // 用来计算每一帧之间鼠标的移动距离
+bool firstMouse = true;     // 判断光标是否第一次进入窗口
+
+// 定义摄像机的位置向量 方向向量 上向量
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
 float vertices_[] = {
     // 位置                // 贴图坐标
@@ -79,6 +86,8 @@ glm::vec3 cubePositions[] = {       // 十个正方体的位置信息
 
 void processInput(GLFWwindow* window);
 void frambuffer_size_callback(GLFWwindow*, int, int);
+void mouse_callback(GLFWwindow*, double, double);     // 鼠标控制回调函数
+void scroll_callback(GLFWwindow*, double, double);      // 鼠标滚轮回调函数
 
 int main() {
     GLFWwindow* mywindow;
@@ -90,7 +99,8 @@ int main() {
     glViewport(0, 0, WIDTH, HEIGHT);         // 打开一个 （0，800）（0，600）的视口 即可绘制部分
     
     glfwSetFramebufferSizeCallback(mywindow, frambuffer_size_callback);     // 给窗口注册回调函数
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // 开启线框模式
+    glfwSetCursorPosCallback(mywindow, mouse_callback);                     // 鼠标回调函数
+    glfwSetScrollCallback(mywindow, scroll_callback);                         // 鼠标滚轮回调函数
 
     // 将顶点属性信息存储在VAO中
     unsigned int VAO;   
@@ -164,16 +174,19 @@ int main() {
     }
     stbi_image_free(data1);      // 释放存放图片数据的变量
 
-
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // 开启线框模式
     glEnable(GL_DEPTH_TEST);    // 启用深度测试
+    glfwSetInputMode(mywindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);   // 隐藏光标
 
     // 创建一个着色器程序对象  利用已经编写好的着色器代码
-    Shader myshader("shaderSource/vs.txt", "shaderSource/fs.txt");
-    myshader.use();                         // 启用着色器程序对象
+    Shader myShader("shaderSource/vs.txt", "shaderSource/fs.txt");
+    myShader.use();                         // 启用着色器程序对象
 
-    myshader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
-    myshader.setInt("myTexture1", 1);
-    
+    myShader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
+    myShader.setInt("myTexture1", 1);
+
+    // 创建一个摄像机对象 摄像机位置与朝向为默认值
+    Camera myCamera;
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
         processInput(mywindow);                 //处理键盘输入
@@ -183,27 +196,30 @@ int main() {
 
         float timeValue = glfwGetTime();
         float timeC = (cos(timeValue) * 0.5) + 0.5f;
-        myshader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
-        myshader.setFloat("mixV", mixValue);    // 设置贴图混合参数
+        myShader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
+        myShader.setFloat("mixV", mixValue);    // 设置贴图混合参数
 
         
-        glm::mat4 viewMat;                      // 创建一个投影矩阵
-        glm::mat4 projMat;                      // 创建一个透视矩阵
-
-        viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -3.0f));                                // 投影矩阵
-        projMat = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
+        glm::mat4 viewMat;                      // 创建一个观察矩阵
+        glm::mat4 projMat;                      // 创建一个透视矩阵 
+                                                // 朝向随俯角与偏航角变化
+        viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+            
+        projMat = glm::perspective(glm::radians(fov), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
         
-        myshader.setMat4("view", viewMat);
-        myshader.setMat4("projection", projMat);
- 
+        // myShader.setMat4("view", myCamera.getViewMat());
+        myShader.setMat4("view", viewMat);
+        myShader.setMat4("projection", projMat);
+
 
         glBindVertexArray(VAO);                 // 使用VAO存储的顶点属性信息
         for (int i = 0; i < 10; i++) {          // 十个立方体 模型矩阵不同 在世界中的位置也就不同
             glm::mat4 modelMat;                 // 创建一个模型矩阵
             modelMat = glm::translate(modelMat, cubePositions[i]);
+            
             modelMat = glm::rotate(modelMat, timeValue * glm::radians(20.0f * (i + 1)), glm::vec3(0.5f, 1.0f, 0.0f)); // 让立方体旋转
 
-            myshader.setMat4("model", modelMat);
+            myShader.setMat4("model", modelMat);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);      // 36个三角形 组成一个正方体
         }
@@ -222,20 +238,94 @@ int main() {
 }
 
 // 处理键盘输入的函数
-void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
+void processInput(GLFWwindow* mywindow) {
+    float currentTime = glfwGetTime();
+    deltaTime = currentTime - lastTime;     // 计算这一帧与上一帧的间隔时间
+    lastTime = currentTime;
+
+    float cameraSpeed = 2.5f * deltaTime;
+
+    if (glfwGetKey(mywindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(mywindow, true);
     }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    if (glfwGetKey(mywindow, GLFW_KEY_UP) == GLFW_PRESS) {
         mixValue += 0.003f;
         if (mixValue > 1.0f)
             mixValue = 1.0f;
     }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    if (glfwGetKey(mywindow, GLFW_KEY_DOWN) == GLFW_PRESS) {
         mixValue -= 0.003f;
         if (mixValue < 0.0f)
             mixValue = 0.0f;
     }
+    if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {
+        cameraPos += cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_S) == GLFW_PRESS) {
+        cameraPos -= cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_A) == GLFW_PRESS) {
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_D) == GLFW_PRESS) {
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+    return;
+}
+
+// 处理鼠标输入的回调函数
+void mouse_callback(GLFWwindow* mywindow, double xPos, double yPos) {
+    if (mywindow == NULL) {
+        std::cout << "This window is false" << std::endl;
+    }
+
+    if(firstMouse) {
+        lastX = xPos;
+        lastY = yPos;
+        firstMouse = false;
+    }
+
+    float sensitivity = 0.025f;      // 鼠标的灵敏度
+
+    float offset_mouse_x = xPos - lastX;
+    float offset_mouse_y = lastY - yPos;
+    lastX = xPos;
+    lastY = yPos;
+
+    offset_mouse_x *= sensitivity;
+    offset_mouse_y *= sensitivity;
+
+    pitch += offset_mouse_y;
+    yaw += offset_mouse_x;
+    
+    if(pitch > 89.0f)
+        pitch =  89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    // 利用俯角和偏航角定义摄像方向
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+
+    return;
+}
+
+// 视角随滚轮缩放的回调函数
+void scroll_callback(GLFWwindow* mywindow, double xoffset, double yoffset) {
+    if (mywindow == NULL) {                     // 防止编译警告
+        std::cout << "This window is false" << std::endl;
+        xoffset++;
+    }
+    if(fov >= 1.0f && fov <= 45.0f)
+        fov -= yoffset;
+    if(fov <= 1.0f)
+        fov = 1.0f;
+    if(fov >= 45.0f)
+        fov = 45.0f;
+    
     return;
 }
 
