@@ -19,18 +19,62 @@
 
 float mixValue = 0.5f;      // 两个贴图的混合参数 初始化为0.5
 
-float vertices[] {          // 用flaot数组定义顶点的标准化设备坐标 每一行分别对应一个顶点的x、y、z轴坐标
-    //位置                  颜色        每个顶点都有相对应的独特的颜色      纹理坐标
-    -0.5f, -0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,         0.0f, 0.0f,
-     0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f, 1.0f,         1.0f, 0.0f,
-     0.5f,  0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,         1.0f, 1.0f,
-    -0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f, 1.0f,         0.0f, 1.0f
-    
+float vertices_[] = {
+    // 位置                // 贴图坐标
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-unsigned int indices[] {    // 顶点索引数组
-    0, 1, 2,                // 第一个三角形
-    0, 2, 3                 // 第二个三角形
+glm::vec3 cubePositions[] = {       // 十个正方体的位置信息
+  glm::vec3( 0.0f,  0.0f,  0.0f), 
+  glm::vec3( 2.0f,  5.0f, -15.0f), 
+  glm::vec3(-1.5f, -2.2f, -2.5f),  
+  glm::vec3(-3.8f, -2.0f, -12.3f),  
+  glm::vec3( 2.4f, -0.4f, -3.5f),  
+  glm::vec3(-1.7f,  3.0f, -7.5f),  
+  glm::vec3( 1.3f, -2.0f, -2.5f),  
+  glm::vec3( 1.5f,  2.0f, -2.5f), 
+  glm::vec3( 1.5f,  0.2f, -1.5f), 
+  glm::vec3(-1.3f,  1.0f, -1.5f)  
 };
 
 void processInput(GLFWwindow* window);
@@ -57,23 +101,20 @@ int main() {
     unsigned int VBO;
     glGenBuffers(1, &VBO);              // 生成一个缓冲对象ID-VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO); // 将VBO与顶点缓冲对象绑定
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  // 将顶点信息传入VBO缓冲内存中
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_), vertices_, GL_STATIC_DRAW);  // 将顶点信息传入VBO缓冲内存中
 
     // 将顶点索引信息利用EBO元素缓冲对象管理
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);              // 生成一个缓冲对象ID-EBO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // 将EBO与元素缓冲对象绑定
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);    // 将索引信息传入EBO缓冲内存中
+    // unsigned int EBO;
+    // glGenBuffers(1, &EBO);              // 生成一个缓冲对象ID-EBO
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // 将EBO与元素缓冲对象绑定
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);    // 将索引信息传入EBO缓冲内存中
 
     // 配置0号位置的顶点属性信息  会存储在已经绑定的VAO中  0号位置用来存储顶点的位置信息
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);   // 启用0号顶点属性
-    //配置1号位置的顶点属性信息   用来存储顶点的渲染颜色信息
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+    // 配置1号位置的顶点属性信息   用来存储顶点的纹理坐标信息
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);   // 启用1号顶点属性
-    //配置2号位置的顶点属性信息   用来存储顶点的纹理坐标信息
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(7 * sizeof(float)));
-    glEnableVertexAttribArray(2);   // 启用1号顶点属性
 
     // 创建两个个纹理对象ID
     unsigned int texture[2];
@@ -124,49 +165,49 @@ int main() {
     stbi_image_free(data1);      // 释放存放图片数据的变量
 
 
+    glEnable(GL_DEPTH_TEST);    // 启用深度测试
+
     // 创建一个着色器程序对象  利用已经编写好的着色器代码
     Shader myshader("shaderSource/vs.txt", "shaderSource/fs.txt");
     myshader.use();                         // 启用着色器程序对象
 
     myshader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
     myshader.setInt("myTexture1", 1);
-
-    glm::mat4 modelMat;                     // 创建一个模型矩阵
-    modelMat = glm::rotate(modelMat, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-    glm::mat4 viewMat;                     // 创建一个投影矩阵
-    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -3.0f));
     
-    glm::mat4 projMat;                      // 创建一个透视矩阵
-    projMat = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
         processInput(mywindow);                 //处理键盘输入
 
-        glClearColor(0.2f, 0.3f, 0.2f, 1.0f);   // 设置清屏颜色状态
-        glClear(GL_COLOR_BUFFER_BIT);           // 用设置好的颜色状态进行清屏操作
+        glClearColor(0.2f, 0.3f, 0.2f, 1.0f);               // 设置清屏颜色状态
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // 用设置好的颜色状态进行清屏操作
 
         float timeValue = glfwGetTime();
         float timeC = (cos(timeValue) * 0.5) + 0.5f;
         myshader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
         myshader.setFloat("mixV", mixValue);    // 设置贴图混合参数
 
-        glm::mat4 modelMat;                     // 创建一个模型矩阵
-        modelMat = glm::rotate(modelMat, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-        glm::mat4 viewMat;                     // 创建一个投影矩阵
-        viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -3.0f));
-    
+        
+        glm::mat4 viewMat;                      // 创建一个投影矩阵
         glm::mat4 projMat;                      // 创建一个透视矩阵
-        projMat = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-        myshader.setMat4("model", modelMat);
+
+        viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -3.0f));                                // 投影矩阵
+        projMat = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
+        
         myshader.setMat4("view", viewMat);
         myshader.setMat4("projection", projMat);
  
 
         glBindVertexArray(VAO);                 // 使用VAO存储的顶点属性信息
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);   // 从索引的第0个开始 每三个顶点画一个三角形
+        for (int i = 0; i < 10; i++) {          // 十个立方体 模型矩阵不同 在世界中的位置也就不同
+            glm::mat4 modelMat;                 // 创建一个模型矩阵
+            modelMat = glm::translate(modelMat, cubePositions[i]);
+            modelMat = glm::rotate(modelMat, timeValue * glm::radians(20.0f * (i + 1)), glm::vec3(0.5f, 1.0f, 0.0f)); // 让立方体旋转
+
+            myshader.setMat4("model", modelMat);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);      // 36个三角形 组成一个正方体
+        }
+        
 
         glfwSwapBuffers(mywindow);              // 判断是否有事件触发（鼠标 键盘等）并负责更新窗口状态 调用相应的回调函数
         glfwPollEvents();                       // 交换颜色缓冲区 输出显示
@@ -174,7 +215,7 @@ int main() {
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    // glDeleteBuffers(1, &EBO);
 
     glfwTerminate();        // 关闭GLFW
     return 0;

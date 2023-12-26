@@ -1,6 +1,5 @@
 #version 330 core
 
-in vec4 myColor;
 in vec2 myTexCoord;
 
 out vec4 FragColor;
@@ -11,7 +10,5 @@ uniform float mixV;
 
 void main() {
     // 带贴图数据
-    FragColor = mix(texture(myTexture0, myTexCoord), texture(myTexture1, myTexCoord), mixV) * myColor;   // 使用不同的纹理单元（数据与设置不同） 相同的纹理坐标
-    // 不带贴图数据
-    // FragColor = myColor; 
+    FragColor = mix(texture(myTexture0, myTexCoord), texture(myTexture1, myTexCoord), mixV);   // 使用不同的纹理单元（数据与设置不同） 相同的纹理坐标
 }

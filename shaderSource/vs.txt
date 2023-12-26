@@ -1,10 +1,8 @@
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec4 Color;
-layout (location = 2) in vec2 aTexCoord;
+layout (location = 1) in vec2 aTexCoord;
 
-out vec4 myColor;
 out vec2 myTexCoord;
 
 uniform float offset_c;
@@ -15,6 +13,5 @@ uniform mat4 projection;
 void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
     // myColor = vec4(Color.x * (1 - 2 * offset_c) + offset_c, Color.y * (1 - 2 * offset_c) + offset_c, Color.z * (1 - 2 * offset_c) + offset_c, Color.w);
-    myColor = Color;
     myTexCoord = aTexCoord;
 }
