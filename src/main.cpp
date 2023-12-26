@@ -15,9 +15,11 @@
 float mixValue = 0.5f;      // 两个贴图的混合参数 初始化为0.5
 float deltaTime = 0.0f;     // 用来计算每一帧之间的间隔时间
 float lastTime = 0.0f;
+
 float fov = 45.0f;          // 视角范围 初始化为最大45°
 float pitch = 0.0f;         // 俯角
 float yaw = -90.0f;         // 偏航角
+
 float lastX = 400, lastY = 300; // 用来计算每一帧之间鼠标的移动距离
 bool firstMouse = true;     // 判断光标是否第一次进入窗口
 
@@ -189,7 +191,8 @@ int main() {
     Camera myCamera;
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
-        processInput(mywindow);                 //处理键盘输入
+        processInput(mywindow);                 // 处理键盘输入
+        myCamera.CameraMove(mywindow);                  // 处理摄像机移动信息
 
         glClearColor(0.2f, 0.3f, 0.2f, 1.0f);               // 设置清屏颜色状态
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // 用设置好的颜色状态进行清屏操作
@@ -208,7 +211,7 @@ int main() {
         projMat = glm::perspective(glm::radians(fov), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
         
         // myShader.setMat4("view", myCamera.getViewMat());
-        myShader.setMat4("view", viewMat);
+        myShader.setMat4("view", myCamera.getViewMat());
         myShader.setMat4("projection", projMat);
 
 
@@ -258,18 +261,23 @@ void processInput(GLFWwindow* mywindow) {
         if (mixValue < 0.0f)
             mixValue = 0.0f;
     }
-    if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {
+    /* if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {
         cameraPos += cameraSpeed * cameraFront;
+        // cameraPos += cameraSpeed * cameraDirec;
     }
     if (glfwGetKey(mywindow, GLFW_KEY_S) == GLFW_PRESS) {
         cameraPos -= cameraSpeed * cameraFront;
+        // cameraPos -= cameraSpeed * cameraDirec;
     }
     if (glfwGetKey(mywindow, GLFW_KEY_A) == GLFW_PRESS) {
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        // cameraPos -= glm::normalize(glm::cross(cameraDirec, cameraUp)) * cameraSpeed;
     }
     if (glfwGetKey(mywindow, GLFW_KEY_D) == GLFW_PRESS) {
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    }
+        // cameraPos += glm::normalize(glm::cross(cameraDirec, cameraUp)) * cameraSpeed;
+    } */
+    
     return;
 }
 
