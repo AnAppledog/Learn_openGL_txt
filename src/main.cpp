@@ -6,11 +6,10 @@
 #include <iostream>
 #include <math.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "gl_init.h"
 #include "shader.h"
-#include "stb_image.h"
 #include "camera.h"
+#include "texture.h"
 
 #define FPS 0               // 通过宏定义修改摄像机模式 1代表FPS模式 0代表自由模式
 
@@ -128,54 +127,12 @@ int main() {
     // 配置1号位置的顶点属性信息   用来存储顶点的纹理坐标信息
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);   // 启用1号顶点属性
-
-    // 创建两个个纹理对象ID
-    unsigned int texture[2];
-    glGenTextures(2, texture);      // 先生成一个对象ID
-
-    glActiveTexture(GL_TEXTURE0);                   // 激活纹理单元0
-    glBindTexture(GL_TEXTURE_2D, texture[0]);       // 将第一个ID与2D纹理对象绑定 并存放在纹理单元0内
-
-    // 设置该单元中环绕、过滤方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // 将s、t轴均设置为重复环绕方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);   // 均设置为线性过滤
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    stbi_set_flip_vertically_on_load(true);     // 颠倒y轴
     
-    // 传入贴图数据
-    int widths, heights, nrChannels;
-    unsigned char* data = stbi_load("textures/sister.jpeg", &widths, &heights, &nrChannels, 0);
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widths, heights, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
-        std::cout << "Failed to laod jpg" << std::endl;
-    }
-    stbi_image_free(data);      // 释放存放图片数据的变量
+    Texture2D mytexture0;
+    Texture2D mytexture1;
 
-    glActiveTexture(GL_TEXTURE1);                   // 激活纹理单元1
-    glBindTexture(GL_TEXTURE_2D, texture[1]);       // 将第2个ID与2D纹理对象绑定 并存放在纹理单元1内
-
-    // 设置该单元中环绕、过滤方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // 将s、t轴均设置为重复环绕方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);   // 均设置为线性过滤
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // 传入贴图数据
-    int widths1, heights1, nrChannels1;
-    unsigned char* data1 = stbi_load("textures/expression.png", &widths1, &heights1, &nrChannels1, 0);
-    if (data1) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, widths1, heights1, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
-        std::cout << "Failed to laod jpg" << std::endl;
-    }
-    stbi_image_free(data1);      // 释放存放图片数据的变量
+    mytexture0.Generate("textures/container.jpg");
+    mytexture1.Generate("textures/sister.jpeg");
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // 开启线框模式
     glEnable(GL_DEPTH_TEST);    // 启用深度测试
@@ -185,8 +142,8 @@ int main() {
     Shader myShader("shaderSource/vs.txt", "shaderSource/fs.txt");
     myShader.use();                         // 启用着色器程序对象
 
-    myShader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
-    myShader.setInt("myTexture1", 1);
+    myShader.setInt("myTexture0", mytexture0.GetID());       // 为对应的采样器设置对应的纹理单元
+    myShader.setInt("myTexture1", mytexture1.GetID());
 
     // 不断绘制图像并接受输入
     while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环 每一次循环为一帧
@@ -195,23 +152,21 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.2f, 1.0f);                   // 设置清屏颜色状态
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // 用设置好的颜色状态进行清屏操作 并开启Z缓冲
 
+        glActiveTexture(GL_TEXTURE0 + mytexture0.GetID());      // 为每个纹理单元绑定对应的纹理数据与设置
+        mytexture0.Bind();
+        glActiveTexture(GL_TEXTURE0 + mytexture1.GetID());
+        mytexture1.Bind();
+
         float timeValue = glfwGetTime();
         float timeC = (cos(timeValue) * 0.5) + 0.5f;
         myShader.setFloat("offset_c", timeC);   // 设置颜色的偏移量
         myShader.setFloat("mixV", mixValue);    // 设置贴图混合参数
 
-        
-        glm::mat4 viewMat;                      // 创建一个观察矩阵
-        glm::mat4 projMat;                      // 创建一个透视矩阵 
-                                                // 朝向随俯角与偏航角变化
-        viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-            
+        glm::mat4 projMat;                      // 创建一个透视矩阵                
         projMat = glm::perspective(glm::radians(myCamera.getViewfov()), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
         
-        // myShader.setMat4("view", myCamera.getViewMat());
         myShader.setMat4("view", myCamera.getViewMat());
         myShader.setMat4("projection", projMat);
-
 
         glBindVertexArray(VAO);                 // 使用VAO存储的顶点属性信息
         for (int i = 0; i < 10; i++) {          // 十个立方体 模型矩阵不同 在世界中的位置也就不同
