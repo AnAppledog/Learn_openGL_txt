@@ -12,13 +12,12 @@
 #include "stb_image.h"
 #include "camera.h"
 
+// 创建一个摄像机对象 摄像机位置与朝向为默认值
+Camera myCamera;
+
 float mixValue = 0.5f;      // 两个贴图的混合参数 初始化为0.5
 float deltaTime = 0.0f;     // 用来计算每一帧之间的间隔时间
 float lastTime = 0.0f;
-
-float fov = 45.0f;          // 视角范围 初始化为最大45°
-float pitch = 0.0f;         // 俯角
-float yaw = -90.0f;         // 偏航角
 
 float lastX = 400, lastY = 300; // 用来计算每一帧之间鼠标的移动距离
 bool firstMouse = true;     // 判断光标是否第一次进入窗口
@@ -187,15 +186,12 @@ int main() {
     myShader.setInt("myTexture0", 0);       // 为对应的采样器设置对应的纹理单元
     myShader.setInt("myTexture1", 1);
 
-    // 创建一个摄像机对象 摄像机位置与朝向为默认值
-    Camera myCamera;
     // 不断绘制图像并接受输入
-    while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环
-        processInput(mywindow);                 // 处理键盘输入
-        myCamera.CameraMove(mywindow);                  // 处理摄像机移动信息
+    while(!glfwWindowShouldClose(mywindow)) {   // 判断是否关闭 不关闭即无限循环 每一次循环为一帧
+        processInput(mywindow);                                     // 处理键盘输入
 
-        glClearColor(0.2f, 0.3f, 0.2f, 1.0f);               // 设置清屏颜色状态
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // 用设置好的颜色状态进行清屏操作
+        glClearColor(0.2f, 0.3f, 0.2f, 1.0f);                   // 设置清屏颜色状态
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // 用设置好的颜色状态进行清屏操作 并开启Z缓冲
 
         float timeValue = glfwGetTime();
         float timeC = (cos(timeValue) * 0.5) + 0.5f;
@@ -208,7 +204,7 @@ int main() {
                                                 // 朝向随俯角与偏航角变化
         viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
             
-        projMat = glm::perspective(glm::radians(fov), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
+        projMat = glm::perspective(glm::radians(myCamera.getViewfov()), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);    // 透视矩阵
         
         // myShader.setMat4("view", myCamera.getViewMat());
         myShader.setMat4("view", myCamera.getViewMat());
@@ -246,8 +242,6 @@ void processInput(GLFWwindow* mywindow) {
     deltaTime = currentTime - lastTime;     // 计算这一帧与上一帧的间隔时间
     lastTime = currentTime;
 
-    float cameraSpeed = 2.5f * deltaTime;
-
     if (glfwGetKey(mywindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(mywindow, true);
     }
@@ -261,23 +255,9 @@ void processInput(GLFWwindow* mywindow) {
         if (mixValue < 0.0f)
             mixValue = 0.0f;
     }
-    /* if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {
-        cameraPos += cameraSpeed * cameraFront;
-        // cameraPos += cameraSpeed * cameraDirec;
-    }
-    if (glfwGetKey(mywindow, GLFW_KEY_S) == GLFW_PRESS) {
-        cameraPos -= cameraSpeed * cameraFront;
-        // cameraPos -= cameraSpeed * cameraDirec;
-    }
-    if (glfwGetKey(mywindow, GLFW_KEY_A) == GLFW_PRESS) {
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-        // cameraPos -= glm::normalize(glm::cross(cameraDirec, cameraUp)) * cameraSpeed;
-    }
-    if (glfwGetKey(mywindow, GLFW_KEY_D) == GLFW_PRESS) {
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-        // cameraPos += glm::normalize(glm::cross(cameraDirec, cameraUp)) * cameraSpeed;
-    } */
     
+    myCamera.CameraMove(mywindow, deltaTime);                  // 处理摄像机移动信息
+
     return;
 }
 
@@ -293,30 +273,12 @@ void mouse_callback(GLFWwindow* mywindow, double xPos, double yPos) {
         firstMouse = false;
     }
 
-    float sensitivity = 0.025f;      // 鼠标的灵敏度
-
     float offset_mouse_x = xPos - lastX;
     float offset_mouse_y = lastY - yPos;
     lastX = xPos;
     lastY = yPos;
 
-    offset_mouse_x *= sensitivity;
-    offset_mouse_y *= sensitivity;
-
-    pitch += offset_mouse_y;
-    yaw += offset_mouse_x;
-    
-    if(pitch > 89.0f)
-        pitch =  89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
-
-    // 利用俯角和偏航角定义摄像方向
-    glm::vec3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(front);
+    myCamera.CameraView(offset_mouse_x, offset_mouse_y);
 
     return;
 }
@@ -327,12 +289,7 @@ void scroll_callback(GLFWwindow* mywindow, double xoffset, double yoffset) {
         std::cout << "This window is false" << std::endl;
         xoffset++;
     }
-    if(fov >= 1.0f && fov <= 45.0f)
-        fov -= yoffset;
-    if(fov <= 1.0f)
-        fov = 1.0f;
-    if(fov >= 45.0f)
-        fov = 45.0f;
+    myCamera.Camerafov(yoffset);
     
     return;
 }
