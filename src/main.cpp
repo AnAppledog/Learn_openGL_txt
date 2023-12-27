@@ -12,6 +12,8 @@
 #include "stb_image.h"
 #include "camera.h"
 
+#define FPS 0               // 通过宏定义修改摄像机模式 1代表FPS模式 0代表自由模式
+
 // 创建一个摄像机对象 摄像机位置与朝向为默认值
 Camera myCamera;
 
@@ -256,7 +258,10 @@ void processInput(GLFWwindow* mywindow) {
             mixValue = 0.0f;
     }
     
-    myCamera.CameraMove(mywindow, deltaTime);                  // 处理摄像机移动信息
+    if (FPS == 1) 
+        myCamera.CameraMoveFPS(mywindow, deltaTime);                  // 处理摄像机移动信息
+    else    
+        myCamera.CameraMove(mywindow, deltaTime);
 
     return;
 }

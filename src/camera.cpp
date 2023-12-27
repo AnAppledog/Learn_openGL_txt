@@ -40,7 +40,7 @@ Camera::Camera(glm::vec3 cameraPos, glm::vec3 cameraTar, float pitch, float yaw,
     this->viewMat = glm::lookAt(this->cameraPos, this->cameraTar, this->cameraUp);       // 创建观察矩阵
 }
 
-void Camera::CameraMove(GLFWwindow* mywindow, float deltaTime) {         // 当前摄像机移动 视角不动 即Front不动  所以Pos与Tar应该相对静止 即保持一样的运动
+void Camera::CameraMove(GLFWwindow* mywindow, float deltaTime) {        // 当前摄像机自由移动 视角不动 即Front不动  所以Pos与Tar应该相对静止 即保持一样的运动
     float true_cameraSpeed = this->cameraSpeed * deltaTime;             // 基于每一帧的间隔所得出的实际速度
 
     if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {               // w朝向视野方向前进
@@ -58,6 +58,30 @@ void Camera::CameraMove(GLFWwindow* mywindow, float deltaTime) {         // 当�
     if (glfwGetKey(mywindow, GLFW_KEY_D) == GLFW_PRESS) {               // d朝向摄像机右轴正方向移动
         this->cameraPos += glm::normalize(glm::cross(this->cameraFront, this->cameraUp)) * true_cameraSpeed;
         this->cameraTar += glm::normalize(glm::cross(this->cameraFront, this->cameraUp)) * true_cameraSpeed;
+    }
+
+    this->viewMat = glm::lookAt(this->cameraPos, this->cameraTar, glm::vec3(0.0f, 1.0f, 0.0f));       // 基于新的位置向量 重新计算观察矩阵
+}
+
+void Camera::CameraMoveFPS(GLFWwindow* mywindow, float deltaTime) {        
+    float true_cameraSpeed = this->cameraSpeed * deltaTime;             
+    glm::vec3 cameraMoveFront = glm::vec3(this->cameraFront.x, 0, this->cameraFront.z);    // 不能随意飞行 即规定y分量为0即可
+
+    if (glfwGetKey(mywindow, GLFW_KEY_W) == GLFW_PRESS) {               
+        this->cameraPos += true_cameraSpeed * cameraMoveFront;
+        this->cameraTar += true_cameraSpeed * cameraMoveFront;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_S) == GLFW_PRESS) {               
+        this->cameraPos -= true_cameraSpeed * cameraMoveFront;
+        this->cameraTar -= true_cameraSpeed * cameraMoveFront;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_A) == GLFW_PRESS) {               
+        this->cameraPos -= glm::normalize(glm::cross(cameraMoveFront, this->cameraUp)) * true_cameraSpeed;
+        this->cameraTar -= glm::normalize(glm::cross(cameraMoveFront, this->cameraUp)) * true_cameraSpeed;
+    }
+    if (glfwGetKey(mywindow, GLFW_KEY_D) == GLFW_PRESS) {               
+        this->cameraPos += glm::normalize(glm::cross(cameraMoveFront, this->cameraUp)) * true_cameraSpeed;
+        this->cameraTar += glm::normalize(glm::cross(cameraMoveFront, this->cameraUp)) * true_cameraSpeed;
     }
 
     this->viewMat = glm::lookAt(this->cameraPos, this->cameraTar, glm::vec3(0.0f, 1.0f, 0.0f));       // 基于新的位置向量 重新计算观察矩阵
